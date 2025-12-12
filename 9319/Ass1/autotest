@@ -1,0 +1,83 @@
+#!/bin/bash
+#set -x #echo on
+
+echo "Testing - total 5 tests, 3 checks (lencode, ldecode) per test..."
+
+rm -f *.o ldecode lencode *.out *.bin
+
+# COMPILE
+if [ -f lencode.c ] ; then
+    gcc -o lencode lencode.c
+fi
+if [ -f lencode.cpp ] ; then
+    g++ -o lencode lencode.cpp
+fi
+if [ -f ldecode.c ] ; then
+    gcc -o ldecode ldecode.c
+fi
+if [ -f ldecode.cpp ] ; then
+    g++ -o ldecode ldecode.cpp
+fi
+
+
+# ENCODE
+if [ -f lencode ] ; then
+
+    ./lencode ~cs9319/a1/test1.txt test1.bin 10
+    ./lencode ~cs9319/a1/test2.txt test2.bin 245
+    ./lencode ~cs9319/a1/test3.txt test3.bin 5000
+    ./lencode ~cs9319/a1/test4.txt test4.bin 49
+    ./lencode ~cs9319/a1/test5.txt test5.bin 400
+    
+    for ((k=1;k<6;++k))
+    do
+	touch test$k.bin
+	correct=`eval diff -q ~cs9319/a1/test$k.lzw test$k.bin`
+	if [ -z "$correct" ]; then
+	    echo "lencode test $k: CORRECT"
+	else
+	    echo "lencode test $k: FAILED"
+	fi
+    done
+    
+else
+    echo "Failed to compile lencode."
+fi
+
+# DECODE
+if [ -f ldecode ] ; then
+
+    for ((k=1;k<6;++k))
+    do
+        ./ldecode test$k.bin test$k.out
+	touch test$k.out
+        correct=`eval diff -q ~cs9319/a1/test$k.txt test$k.out`
+        if [ -z "$correct" ]; then
+            echo "ldecode with your encoded file $k: CORRECT"
+        else
+            echo "ldecode with your encoded file $k: FAILED"
+        fi
+    done
+
+    rm -f *.out
+
+    for ((k=1;k<6;++k))
+    do
+        ./ldecode ~cs9319/a1/test$k.lzw test$k.out
+	touch test$k.out
+        correct=`eval diff -q ~cs9319/a1/test$k.txt test$k.out`
+        if [ -z "$correct" ]; then
+            echo "ldecode with our encoded file $k: CORRECT"
+        else
+            echo "ldecode with our encoded file $k: FAILED"
+        fi
+    done
+
+else
+    echo "Failed to compile ldecode."
+fi
+
+
+
+
+

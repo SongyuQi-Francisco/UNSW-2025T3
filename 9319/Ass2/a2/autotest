@@ -1,0 +1,53 @@
+#!/bin/bash
+#set -x #echo on
+
+echo "This sanity test only runs tests on dna-tiny.rbwt"
+echo "It does not check the timings nor memory usage."
+echo 
+
+rm -f *.out *.dec bwtdecode bwtsearch *.o
+
+make
+
+echo
+
+if [ -f bwtdecode ] ; then
+    ./bwtdecode ~cs9319/a2/dna-tiny.rbwt tiny.dec
+    touch tiny.dec  
+    correct=`eval diff -q ~cs9319/a2/dna-tiny.txt tiny.dec`
+    if [ -z "$correct" ]; then
+      echo "Passed decoding dna-tiny.rbwt"
+    else
+      echo "Failed decoding dna-tiny.rbwt"
+    fi
+else
+    echo "Failed to make bwtdecode."
+fi
+
+if [ -f bwtsearch ] ; then
+    ./bwtsearch ~cs9319/a2/dna-tiny.rbwt < ~cs9319/a2/dna-tiny.input > tiny.out
+    touch tiny.out
+    wrong=`diff ~cs9319/a2/dna-tiny.output tiny.out | grep "^<" | wc -l`
+    tot=$(( 10 - $wrong ))
+    echo "Passed $tot search terms out of 10 for searching dna-tiny.rbwt" 
+
+    ./bwtsearch ~cs9319/a2/dna-tiny.rbwt < ~cs9319/a2/dna-tiny.input2 > tiny2.out
+    touch tiny.out
+    wrong=`diff ~cs9319/a2/dna-tiny.output2 tiny2.out | grep "^<" | wc -l`
+    tot=$(( 5 - $wrong ))
+    echo "Passed $tot search terms out of 5 for searching dna-tiny.rbwt"
+else
+    echo "Failed to make bwtsearch."
+fi
+
+echo "--- bwtdecode memory test ---"
+echo "running valgrind... (this may take a long time)"
+valgrind --tool=massif --pages-as-heap=yes --massif-out-file=large.memory ./bwtdecode ~cs9319/a2/dna-large.rbwt large.myout
+
+echo "Valgrind finished. printing memory report"
+ms_print large.memory
+echo
+
+echo
+/usr/bin/time -v ./bwtdecode ~cs9319/a2/dna-large.rbwt test-large.txt 2>&1 | grep -E '(Maximum resident|User time|System time|Elapsed)' && diff -q test-large.txt ~cs9319/a2/dna-large.txt
+echo

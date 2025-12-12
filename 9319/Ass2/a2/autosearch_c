@@ -1,0 +1,58 @@
+#!/bin/bash
+rm -f *.out *.dec bwtdecode bwtsearch *.o *.log *.bwt *.kmp *.myoutput
+make
+
+HUGE_RBWT_FILE="dna-huge.rbwt" 
+HUGE_TXT_FILE="dna-huge.txt"
+INPUT_FILE="huge.search"     # search input file (must exist)
+BWT_OUT="huge.bwt"           # bwtsearch output file
+KMP_OUT="huge.kmp"           # kmp output file
+MEM_LOG="memory.out"         # memory log file
+
+if [ $has_error -eq 1 ]; then
+    echo "please ensure the above files exist in the current directory before running!"
+    exit 1
+fi
+echo "all files found."
+echo
+
+echo "--- running bwtsearch vs kmp correctness test (verification gate) ---"
+
+echo "running bwtsearch..."
+./bwtsearch ../"$HUGE_RBWT_FILE" < ../"$INPUT_FILE" > ../"$BWT_OUT"
+
+echo "running kmp..."
+./kmp ../"$HUGE_TXT_FILE" < ../"$INPUT_FILE" > ../"$KMP_OUT"
+
+
+diff_count=$(diff -y --suppress-common-lines ../"$BWT_OUT" ../"$KMP_OUT" | wc -l)
+
+if [ $? -eq 0 ]; then
+    echo "--- verification passed! ---"
+else
+    echo "--- verification failed! ---"
+    echo "bwtsearch and kmp output exist differences."
+    echo "verification failed number (number of mismatched lines): $diff_count"
+    echo
+    echo "--- detailed difference (diff -y) ---"
+    diff -y --suppress-common-lines ../"$BWT_OUT" ../"$KMP_OUT"
+    echo "--- detailed difference end ---"
+    echo
+    echo "test terminated due to verification failure!"
+    exit 1 
+fi
+
+echo "--- bwtsearch memory test ---"
+echo "running valgrind... (this may take a long time)"
+valgrind --tool=massif --pages-as-heap=yes --massif-out-file="$MEM_LOG" ./bwtsearch ../"$HUGE_RBWT_FILE" < ../"$INPUT_FILE"
+
+echo "Valgrind finished. printing memory report (from $MEM_LOG):"
+ms_print "$MEM_LOG"
+echo
+
+echo "--- bwtsearch time test ---"
+echo "running time... (output will be discarded to /dev/null)"
+time ./bwtsearch ../"$HUGE_RBWT_FILE" < ../"$INPUT_FILE" > /dev/null
+echo
+
+echo "--- test finished ---"
