@@ -122,11 +122,6 @@ make clean
 4. **Reinforcement Learning**: Q-learning algorithm implementation for solving reinforcement learning problems
 5. **Computer Vision**: Includes image processing, feature extraction, and other CV tasks
 
-## 👤 Author Information
-
-- **Author**: Songyu Qi
-- **Student ID**: z5536858
-
 ## 📄 License
 
 This repository is for academic purposes only and contains course assignment and project code.
